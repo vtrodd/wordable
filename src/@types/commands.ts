@@ -1,19 +1,15 @@
 import { SlashCommandBuilder } from '@discordjs/builders'
 import { BaseCommandInteraction } from 'discord.js'
 
-export type Info = {
-  name: string
-  description: string
-}
-
-export type Execution = (interaction: BaseCommandInteraction) => Promise<void>
+type SlashCommand = SlashCommandBuilder | Omit<SlashCommandBuilder, "addSubcommand" | "addSubcommandGroup">
+type Execution = (interaction: BaseCommandInteraction) => Promise<void>
 
 export class Command {
-  info: SlashCommandBuilder
+  info: SlashCommand
   execute: Execution
 
-  constructor(_info: Info, _execute: Execution) {
-    this.info = new SlashCommandBuilder().setName(_info.name).setDescription(_info.description)
+  constructor(_info: SlashCommand, _execute: Execution) {
+    this.info = _info
     this.execute = _execute
   }
 }
