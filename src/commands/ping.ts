@@ -1,12 +1,14 @@
-import { Command, Info } from "../@types/commands";
+import { SlashCommandBuilder } from '@discordjs/builders';
+import { Command } from '../@types/commands';
 
-const info: Info = {
-  name: "ping",
-  description: "Replies with pong!"
-}
+const command: Command = new Command(
+  new SlashCommandBuilder()
+    .setName('ping')
+    .setDescription('Replies with pong!'),
 
-const ping: Command = new Command(info, async interaction => {
-  await interaction.reply('Pong!')
-})
+  async interaction => {
+    await interaction.reply({ content: 'Pong!', ephemeral: true })
+  }
+)
 
-export default ping
+export default command
