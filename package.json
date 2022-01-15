@@ -1,0 +1,29 @@
+{
+  "name": "wordable",
+  "version": "0.0.1",
+  "description": "🤖 A small, robust bot Discord bot to support and manage a daily word game in your server. (soon™)",
+  "main": "./src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vtrodd/wordable.git"
+  },
+  "author": "Trodd <vic@trodd.dev>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vtrodd/wordable/issues"
+  },
+  "homepage": "https://github.com/vtrodd/wordable#readme",
+  "dependencies": {
+    "@discordjs/builders": "^0.11.0",
+    "@discordjs/rest": "^0.2.0-canary.0",
+    "discord-api-types": "^0.26.1",
+    "discord.js": "^13.6.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
+  }
+}
