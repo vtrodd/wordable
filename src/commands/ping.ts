@@ -1,5 +1,3 @@
-import { SlashCommandBuilder } from "@discordjs/builders";
-import { CacheType, Interaction } from "discord.js";
 import { Command, Info } from "../@types/commands";
 
 const info: Info = {
