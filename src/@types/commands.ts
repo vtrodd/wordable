@@ -1,5 +1,5 @@
-import { BaseCommandInteraction } from 'discord.js'
 import { SlashCommandBuilder } from '@discordjs/builders'
+import { BaseCommandInteraction } from 'discord.js'
 
 export type Info = {
   name: string
