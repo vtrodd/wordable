@@ -1,21 +1,25 @@
-import { SlashCommandBuilder } from '@discordjs/builders'
-import * as checkWord from 'check-word'
-import { Command, Execution } from '../@types/commands'
+import { MessageActionRow, MessageButton } from "discord.js"
+import { MessageButtonStyles } from "discord.js/typings/enums"
+import { Command, Execution } from "../@types/commands"
 import * as words from '../sgb-words.json'
+import * as checkWord from 'check-word'
+import { SlashCommandBuilder } from "@discordjs/builders"
 
 const dictionary = checkWord('en')
 
 class GameState {
   boardState: string[]
-  evaluations: string[][]
-  gameStatus: 'playing' | 'won' | 'lost'
+  rows: MessageActionRow[]
+  evaluations: ('🟩' | '🟨' | '⬛')[][]
+  gameStatus: 'ongoing' | 'won' | 'lost'
   rowIndex: number
   solution: string
 
   constructor(_solution: string) {
     this.boardState = []
+    this.rows = []
     this.evaluations = []
-    this.gameStatus = 'playing'
+    this.gameStatus = 'ongoing'
     this.rowIndex = 0
     this.solution = _solution
   }
@@ -23,51 +27,62 @@ class GameState {
   guess = (guess: string) => {
     this.boardState.push(guess)
 
-    let evaluation: string[] = []
     if (guess === this.solution) {
-      evaluation = guess.split('').map(() => '🟩')
       this.gameStatus = 'won'
-    } else {
-      let solution = this.solution.split('') // this is so we can remove letters once we have checked against the guess
-      console.log(solution)
-      evaluation = guess.split('').map((letter, i) => {
-        if (letter === solution[i]) { // if the letter is in the right place
-          solution[i] = ''
-          return '🟩'
-        }
-
-        if (solution.includes(letter)) { // if the letter is in the solution but not in the right place
-          solution[solution.indexOf(letter)] = ''
-          return '🟨'
-        }
-
-        return '⬜' // if the letter is not in the solution // TODO: Light/Dark mode
-      })
     }
 
+    const tiles = guess.split('').map(letter => new MessageButton().setLabel(letter.toUpperCase()))
+    const evaluation: ('🟩' | '🟨' | '⬛')[] = []
+
+    let solution = this.solution.split('')
+    let chars = guess.split('')
+    chars.forEach((letter, i) => {
+      if (letter === solution[i]) {
+        solution[i] = ''
+        chars[i] = ' '
+        evaluation[i] = '🟩'
+        tiles[i].setStyle(MessageButtonStyles.SUCCESS).setCustomId(i.toString())
+      }
+    })
+
+    chars.forEach((letter, i) => {
+      if (solution.includes(letter)) {
+        solution[i] = ''
+        chars[i] = ' '
+        evaluation[i] = '🟨'
+        tiles[i].setStyle(MessageButtonStyles.PRIMARY).setCustomId(i.toString())
+      } else if (chars[i] !== ' ') {
+        evaluation[i] = '⬛'
+        tiles[i].setStyle(MessageButtonStyles.SECONDARY).setCustomId(i.toString())
+      }
+    })
+
+    this.rows.push(new MessageActionRow().setComponents(tiles))
     this.evaluations.push(evaluation)
     this.rowIndex++
   }
 }
 
-type UserId = string
-
 class Guild {
   todaysWord: string
-  users: Map<UserId, GameState>
+  games: Map<string, GameState>
 
   constructor() {
-    this.todaysWord = words[Math.floor(Math.random() * words.length)]
-    this.users = new Map()
+    this.newWord()
   }
 
-  newUser = (userId: UserId) => this.users.set(userId, new GameState(this.todaysWord))
+  newGame = (userId: string) => this.games.set(userId, new GameState(this.todaysWord))
+
+  newWord = () => {
+    this.todaysWord = words[Math.floor(Math.random() * words.length)]
+    this.games = new Map()
+  }
 }
 
-const guilds: { [guildId: string]: Guild } = {}
+const guilds = new Map<string, Guild>()
 
 const execute: Execution = async interaction => {
-  let guess = interaction.options.get('guess').value
+  const guess = interaction.options.get('guess').value
 
   // guess constraints:
   // must be a string
@@ -81,40 +96,31 @@ const execute: Execution = async interaction => {
     return await interaction.reply({ content: 'Not in word list', ephemeral: true })
 
   // if the guild has not yet started playing, it is created here
-  if (!guilds[interaction.guild.id])
-    guilds[interaction.guild.id] = new Guild()
-
+  if (!guilds.has(interaction.guild.id))
+    guilds.set(interaction.guild.id, new Guild())
+  const guild = guilds.get(interaction.guild.id)
 
   // if the user has not yet started playing in this guild, their game state is created here
-  if (!guilds[interaction.guild.id].users.get(interaction.user.id))
-    guilds[interaction.guild.id].newUser(interaction.user.id)
+  if (!guild.games.has(interaction.user.id))
+    guild.newGame(interaction.user.id)
+  const game = guild.games.get(interaction.user.id)
 
-
-  const gameInstance = guilds[interaction.guild.id].users.get(interaction.user.id)
-  gameInstance.guess(guess)
-  
-  // Potentially we could use the canvas to draw the guessed word on top of coloured squares? https://discordjs.guide/popular-topics/canvas.html#adding-in-text
-  const tiles = gameInstance.evaluations[gameInstance.rowIndex - 1].join('')
-
-  switch (gameInstance.gameStatus) {
+  switch (game.gameStatus) { // I'll put nicer messages here later dw
     case 'won':
-      return await interaction.reply({ content: `${guess}\n${tiles}\nYou won!`, ephemeral: true })
-
+      return await interaction.reply({ content: 'You already won', ephemeral: true })
     case 'lost':
-      return await interaction.reply({ content: `${guess}\n${tiles}\nYou lost!`, ephemeral: true })
-
+      return await interaction.reply({ content: 'You already lost', ephemeral: true })
     default:
-      return await interaction.reply({ content: `${guess}\n${tiles}\nKeep guessing! Guess number: ${gameInstance.rowIndex}`, ephemeral: true })
+      game.guess(guess) // wonder if this should return stuff that we can use, rather than having to grab it from the game object afterwards? It could even just return the game.rows?
+      return await interaction.reply({ content: '_ _', ephemeral: true, components: [game.rows[game.rowIndex - 1]] })
   }
-
 }
 
 const command: Command = new Command(
   new SlashCommandBuilder()
     .setName('guess')
-    .setDescription('Make a guess')
-    .addStringOption(option => option.setName('guess').setDescription('Your 5-letter guess').setRequired(true)), // not sure how to get the command to show the guess parameter :/
-
+    .setDescription('Guess a word')
+    .addStringOption(option => option.setName('guess').setDescription('Your 5-letter guess').setRequired(true)),
   execute
 )
 
