@@ -12,5 +12,5 @@ client.once('ready', () => {
 
 client.on('interactionCreate', useCommand)
 
-client.login(config.token)
+client.login(config.TOKEN)
 
