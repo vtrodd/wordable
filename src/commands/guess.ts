@@ -7,19 +7,29 @@ const dictionary = checkWord('en')
 
 const guilds = new Map<string, Guild>()
 
-const execute: Execution = async interaction => {
-  const guess = interaction.options.get('guess').value
+const constraintsHit = (guess: string) : string | undefined => {
+  if (guess.length !== 5) {
+    return 'Word should be 5 letters long'
+  }
 
-  // guess constraints:
-  // must be a string
-  if (typeof guess !== 'string')
-    return await interaction.reply({ content: 'Not a word', ephemeral: true })
-  // must be 5 letters long
-  if (guess.length !== 5)
-    return await interaction.reply({ content: 'Word should be 5 letters long', ephemeral: true })
-  // must be a word in the dictionary (might be worth looking into the reliability of this)
-  if (!dictionary.check(guess.toLowerCase()))
-    return await interaction.reply({ content: 'Not in word list', ephemeral: true })
+  if (!guess.match(/[a-z]{5}/)) {
+    return 'Not a word'
+  }
+
+  //TODO: look into reliability
+  if (!dictionary.check(guess.toLowerCase())) {
+    return 'Not in word list'
+  }
+
+  return undefined
+}
+
+const execute: Execution = async interaction => {
+  const guess = interaction.options.get('guess').value as string
+
+  if (constraintsHit(guess)) {
+    return await interaction.reply({content: constraintsHit(guess), ephemeral: true});
+  }
 
   // if the guild has not yet started playing, it is created here
   if (!guilds.has(interaction.guild.id))
