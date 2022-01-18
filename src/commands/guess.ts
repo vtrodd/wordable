@@ -22,8 +22,9 @@ const constraintsHit = (guess: string) => {
 const execute: Execution = async interaction => {
   const guess = interaction.options.get('guess').value as string
 
-  if (constraintsHit(guess))
-    return await interaction.reply({ content: constraintsHit(guess), ephemeral: true });
+  const constraintMessage = constraintsHit(guess)
+  if (constraintMessage)
+    return await interaction.reply({ content: constraintMessage, ephemeral: true })
 
   // if the guild has not yet started playing, it is created here
   if (!guilds.has(interaction.guild.id))
