@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["mongoDb"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Guild {
+  id      String @id @unique @default(dbgenerated()) @map("_id") @db.ObjectId
+  guildId String @unique
+
+  users   User[]   @relation(fields: [userIds])
+  userIds String[] @db.Array(ObjectId)
+
+  games Game[]
+}
+
+model User {
+  id     String @id @unique @default(dbgenerated()) @map("_id") @db.ObjectId
+  userId String @unique
+
+  guilds   Guild[]  @relation(fields: [guildIds])
+  guildIds String[] @db.Array(ObjectId)
+
+  games   Game[]   @relation(fields: [gameIds])
+  gameIds String[] @db.Array(ObjectId)
+}
+
+model Game {
+  id Int @id @default(autoincrement()) @map("_id")
+
+  users   User[]   @relation(fields: [userIds])
+  userIds String[] @db.Array(ObjectId)
+
+  userGames UserGame[]
+
+  guild   Guild  @relation(fields: [guildId], references: [id])
+  guildId String @db.ObjectId
+
+  word    String
+  success Boolean
+}
+
+model UserGame {
+  id String @id @default(dbgenerated()) @map("_id") @db.ObjectId
+
+  Game   Game   @relation(fields: [gameId], references: [id])
+  gameId String @db.ObjectId
+
+  userId String @db.ObjectId
+
+  success Boolean
+  guesses Guess[]
+}
+
+model Guess {
+  id Int @id @default(autoincrement()) @map("_id")
+
+  UserGame   UserGame @relation(fields: [userGameId], references: [id])
+  userGameId String   @db.ObjectId
+
+  word       String
+  evaluation String
+}

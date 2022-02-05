@@ -30,7 +30,11 @@ And from there, still in that Git Bash window:
 ```
 npm install
 ```
-This will install the necessary node modules (don't worry, these won't be tracked and added to any commits you make!).
+
+Prisma needs to generate the necessary schema from the one that's been defined:
+```
+npx prisma generate
+```
 
 If you want to be able to run this bot, you'll also need a `config.json` file in the directory, something like this:
 ```
